@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><testsuite errors="1" failures="0" name="Flujo de compra exitosa en SauceDemo" skipped="5" tests="6" time="37.27" timestamp="2026-06-26 11:53:55"><testcase name="Compra exitosa de dos productos"><error message="Could not instantiate class org.openqa.selenium.chrome.ChromeDriver" type="net.thucydides.core.webdriver.DriverConfigurationError">Could not instantiate class org.openqa.selenium.chrome.ChromeDriver</error><system-err>Could not instantiate class org.openqa.selenium.chrome.ChromeDriver
+co.devsu.reto.hooks.SetStageHook.setTheStage(SetStageHook.java:19)
+</system-err></testcase></testsuite>
