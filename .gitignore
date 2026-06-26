@@ -6,6 +6,7 @@ build/
 .vscode/
 .idea/
 .kiro/
+.kirosignore
 *.suo
 *.ntvs*
 *.njsproj
