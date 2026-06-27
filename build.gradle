@@ -21,50 +21,63 @@ java {
 ext {
     serenityVersion = '4.2.34'
     cucumberVersion = '7.20.1'
-    karateVersion = '1.5.1'
+    karateVersion = '1.4.1'
     lombokVersion = '1.18.38'
     assertjVersion = '3.27.3'
+    junitVersion = '5.12.2'
+}
+
+sourceSets {
+    test {
+        java.srcDirs = ['src/test/serenity']
+        resources.srcDirs = ['src/test/resources']
+    }
+    karateTest {
+        java.srcDirs = ['src/test/karate']
+        resources.srcDirs = ['src/test/resources']
+    }
+}
+
+configurations {
+    karateTestImplementation.extendsFrom testImplementation
+    karateTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
 
-    // Serenity Core
     testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
     testImplementation "net.serenity-bdd:serenity-junit5:${serenityVersion}"
 
-    // Screenplay
     testImplementation "net.serenity-bdd:serenity-screenplay:${serenityVersion}"
     testImplementation "net.serenity-bdd:serenity-screenplay-webdriver:${serenityVersion}"
     testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
 
-    // Cucumber
     testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
     testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
     testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
 
-    // Selenium
     testImplementation "org.seleniumhq.selenium:selenium-java:4.33.0"
 
-    // Assertions
     testImplementation "org.assertj:assertj-core:${assertjVersion}"
     testImplementation "org.hamcrest:hamcrest:3.0"
 
-    // Faker
     testImplementation "net.datafaker:datafaker:2.4.2"
 
-    // Lombok
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    // JUnit 5
     testImplementation platform("org.junit:junit-bom:5.12.2")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testImplementation "org.junit.platform:junit-platform-suite:1.12.2"
 
     testImplementation "org.apache.commons:commons-lang3:3.14.0"
     testImplementation "org.apache.poi:poi-ooxml:5.3.0"
+
+    karateTestImplementation "com.intuit.karate:karate-junit5:${karateVersion}"
+    karateTestRuntimeOnly "org.junit.platform:junit-platform-launcher"
+    karateTestRuntimeOnly "ch.qos.logback:logback-classic:1.4.14"
 }
 
 tasks.named('test') {
@@ -81,6 +94,23 @@ tasks.named('test') {
     }
 
     finalizedBy aggregate
+}
+
+task karateTest(type: Test, group: 'verification', description: 'Runs Karate API tests') {
+    testClassesDirs = sourceSets.karateTest.output.classesDirs
+    classpath = sourceSets.karateTest.runtimeClasspath
+
+    useJUnitPlatform()
+
+    systemProperty "karate.env", System.getProperty("karate.env", "qa")
+    systemProperty "karate.options", System.getProperty("karate.options", "")
+
+    outputs.upToDateWhen { false }
+
+    testLogging {
+        showStandardStreams = true
+        events "passed", "skipped", "failed"
+    }
 }
 
 serenity {

@@ -1,0 +1,178 @@
+
+CONCLUSIONES Y HALLAZGOS
+Reto Devsu - Automatizacion E2E y API
+
+
+
+PARTE 1 - AUTOMATIZACION E2E:
+
+HALLAZGOS:
+
+1. La pagina SauceDemo es un entorno de pruebas estable y predecible. Los selectores CSS son limpios y consistentes, lo que
+   facilita la implementacion de los Targets (Page Objects), Task y Interactions.
+
+2. El patrón Screenplay de Serenity BDD permite un codigo legible y mantenible.
+   La separacion entre Tasks, Interactions y Questions permite que cada clase
+   tenga una unica responsabilidad, reduciendo el acoplamiento (SOLID).
+
+3. La captura de datos durante la interaccion (nombre y precio de cada producto
+   al agregarlos al carrito) y su posterior uso en validaciones del resumen de
+   orden demostro ser un patron efectivo para garantizar la consistencia de datos
+   a traves del flujo E2E, pues permite validar la consistencia de los datos a lo largo de la prueba.
+
+4. El calculo del total esperado (subtotal + impuesto) y su comparacion con el
+   valor mostrado por la aplicacion agrega valor real a la prueba, valida
+   logica de negocio y no solo la presencia de elementos en pantalla.
+
+5. La ejecucion en modo headless en CI/CD reduce tiempos de ejecucion y evita
+   dependencias de entorno grafico. Chrome en modo headless funciona de forma
+   estable con la configuracion de los switches utilizada.
+
+CONCLUSIONES E2E:
+
+- Serenity BDD con Screenplay es una opcion robusta para pruebas E2E de UI.
+  Genera reportes detallados con capturas de pantalla por paso (configurable
+  en el serenity.conf para pantallazos solo en fallos), lo que facilita
+  el diagnostico de fallos sin necesidad de reproduccion manual.
+
+- El uso de Cucumber permite que los criterios de aceptacion sean la fuente
+  directa de los escenarios de prueba, alineando el trabajo de QA con las
+  definiciones del negocio.
+
+- La arquitectura implementada es escalable: agregar nuevos flujos implica
+  crear nuevos Steps, Tasks, Interactions y Questions sin modificar las existentes, 
+  tambien permitiendo reutilizar los existentes para armar otros casos de prueba.
+
+- La eleccion de Screenplay sobre otros enfoques se basa en su modelo de capas 
+  bien definidas: Actors, Tasks, Interactions y Questions. 
+  Esta separacion de responsabilidades hace que cada clase tenga un unico proposito, 
+  lo que reduce el acoplamiento, facilita el mantenimiento y hace el codigo mas 
+  legible para cualquier miembro del equipo. Cuando un flujo falla, es inmediato 
+  identificar en que capa ocurrio el problema: si fue al interactuar con un elemento,
+  al ejecutar una secuencia de pasos, o al validar un resultado.
+
+- Es importante mencionar que otros frameworks como Cypress y Playwright, 
+  combinados con una arquitectura solida como Page Object Model (POM), tambien son opciones 
+  validas y ampliamente usadas en la industria. La diferencia no esta en la capacidad de los 
+  frameworks sino en el contrato arquitectonico que imponen: Screenplay lo hace explicito 
+  y obligatorio por diseño, mientras que con POM la calidad del diseno depende de la disciplina 
+  del equipo. En proyectos con equipos grandes o alta rotacion, ese contrato explicito de 
+  Screenplay reduce la deuda tecnica a largo plazo.
+
+
+PARTE 2 - PRUEBAS DE API (Karate)
+HALLAZGOS:
+
+1. La API de PetStore es un entorno publico compartido. Esto implica que otros usuarios pueden crear,
+   modificar o eliminar datos en cualquier momento, lo que puede generar inconsistencias en los datos 
+   de prueba si se usan valores fijos.
+
+   Solucion implementada: cada escenario genera un username unico usando 
+   java.lang.System.currentTimeMillis() como sufijo, garantizando unicidad entre ejecuciones 
+   concurrentes y entre diferentes equipos que usen el mismo entorno.
+
+2. La API no usa codigos de respuesta HTTP semanticos de forma consistente. Todas las operaciones 
+   (POST, PUT, DELETE, e incluso algunos casos de error como username en null) retornan HTTP 200. 
+   Esto es un defecto de diseno de la API: un POST exitoso deberia retornar 201 Created, 
+   un campo requerido ausente deberia retornar 400 Bad Request. Las pruebas se adaptaron al comportamiento 
+   real de la API, pero se documentan estos casos como bugs identificados.
+
+3. El endpoint POST /user acepta un campo 'id' en el request y cuando se envia en el post lo
+   asigna en lugar de generarlo internamente, de hecho cuando se envia el id deberia responder un 
+   400 BadRequest dado que esto es una violacion del principio REST donde el backend es el unico 
+   responsable de gestionar los identificadores de recursos. 
+   
+   Se implemento un escenario especifico (falla) que verifica que el ID retornado por la API difiere 
+   del enviado por el cliente, exponiendo este comportamiento.
+
+4. El endpoint POST /user acepta username con valor null y retorna HTTP 200, pero no crea el usuario correctamente. 
+   La API deberia rechazar este request con un 400 Bad Request. Este comportamiento fue identificado y automatizado 
+   como un escenario de camino alternativo que falla intencionalmente para evidenciar el bug.
+
+5. Hay inconsistencia en el tipo del campo 'id' entre operaciones: el GET retorna el id como numero entero en el JSON, 
+   mientras que el POST retorna el mismo ID como string en el campo 'message'. Esta falta de consistencia
+   obliga al framework de pruebas a hacer conversiones explicitas con karate.toString() para poder comparar ambos valores.
+
+6. El campo 'type' en las respuestas siempre retorna el valor 'unknown', tanto en operaciones exitosas como en errores. 
+   Este campo no aporta informacion util y su presencia con ese valor fijo sugiere que no fue implementado correctamente en el backend.
+
+7. El endpoint DELETE retorna el username en el campo 'message' cuando la eliminacion es exitosa. 
+   Este comportamiento no es estandar en APIs REST (lo usual es un 204 No Content sin body) pero fue identificado 
+   durante la exploracion y se incorporo como asercion en los escenarios.
+
+
+CONCLUSIONES API:
+
+- Karate es una opcion muy productiva para pruebas de API REST. Su DSL basado en Gherkin es legible 
+  para perfiles no tecnicos, mientras que su soporte nativo para JSON, expresiones de matching y 
+  reutilizacion de variables lo hace potente para casos de uso reales.
+
+- La suite implementada no solo cubre el camino feliz del CRUD sino que incluye escenarios de caminos
+  alternos orientados al fallo (username null, ID enviado por cliente, doble DELETE) que documentan 
+  defectos reales de la API. Estos escenarios fallan intencionalmente porque la API no se comporta 
+  como deberia segun los estandares REST: esa falla es la evidencia del bug, no del framework.
+
+- La integracion de Karate en un proyecto Serenity existente mediante un source set separado de 
+  Gradle es la estrategia correcta: evita conflictos de classpath y permite ejecutar ambos frameworks 
+  de forma independiente o conjunta con ./gradlew test karateTest.
+
+- La API de PetStore, al ser publica y sin autenticacion, tiene limitaciones para entornos de prueba 
+  controlados. En proyectos reales se recomienda usar una instancia propia o mocks para garantizar 
+  aislamiento de datos y comportamiento predecible de los endpoints.
+
+- Las cinco operaciones del CRUD mas los escenarios negativos cubren tanto el ciclo de vida completo 
+  del recurso como los casos borde mas comunes, lo que constituye una suite de regresion representativa 
+  para cualquier API RESTful.
+
+CONCLUSIONES GENERALES:
+
+- Tener E2E y API en el mismo repositorio y gestionados con el mismo build
+  tool (Gradle) simplifica la configuracion de CI/CD: un solo pipeline puede
+  ejecutar ambas suites con ./gradlew test karateTest.
+
+- La separacion fisica de los source sets garantiza que las dependencias de
+  cada framework no interfieran entre si, lo que facilita actualizaciones
+  independientes de versiones.
+
+- Los reportes de Serenity (HTML interactivo con screenshots) y los de Karate
+  (HTML con timeline de llamadas HTTP) permiten una lectura apropiada del 
+  resultado de las pruebas
+
+- Adopción de SpecDrivenDevelopment (SDD) y su impacto en la productividad:
+  
+  La suite E2E se construyó siguiendo los principios de SpecDrivenDevelopment, 
+  donde los escenarios escritos en Gherkin no son meras pruebas, sino especificaciones 
+  ejecutables del comportamiento esperado del sistema. Este enfoque permite que los 
+  criterios de aceptación definidos por negocio y desarrollo sean la fuente directa 
+  de los escenarios automatizados, reduciendo ambigüedades y alineando a todos los 
+  roles en un mismo lenguaje.
+  Al igual que las iniciativas de formación en IA de la compañía, SDD es una práctica 
+  que potencia la productividad del equipo al acelerar la detección temprana de desviaciones, 
+  minimizar el retrabajo y facilitar la trazabilidad entre requisitos y código automatizado. 
+  Además, sienta las bases para futuras mejoras, como la generación asistida de escenarios 
+  mediante asistentes de IA, lo que alinearía la automatización con las tendencias tecnológicas actuales.
+
+- Historias de Usuario Técnicas como estrategia de diseño y contrato (HU-API-001 y HU-E2E-001):
+
+  Previamente al desarrollo del framework, se elaboraron dos historias de usuario técnicas que definieron 
+  el alcance, las reglas de negocio, los criterios de aceptación y los casos de prueba para cada suite.
+
+  * HU-API-001 cubrió el CRUD de usuarios en PetStore, especificando cinco operaciones clave, 
+    reglas de unicidad de username y validaciones de consistencia entre endpoints.
+
+  * HU-E2E-001 detalló el flujo de compra en SauceDemo, incluyendo la captura de datos de productos, 
+    validación del carrito, cálculo de impuestos y total, y confirmación de la orden.
+    
+    Estas HU no solo guiaron la implementación, sino que actuaron como contrato vivo entre QA, desarrollo y negocio, 
+    asegurando que el trabajo automatizado estuviera alineado con los requisitos funcionales desde el inicio. 
+    Este enfoque "spec-first" redujo la ambigüedad, facilitó la priorización y permitió que cualquier miembro 
+    del equipo entendiera el propósito de cada prueba sin necesidad de leer el código fuente.
+
+- Gestión de versiones y flujo de trabajo colaborativo: Las historias de usuario técnicas (HU-API-001 y HU-E2E-001) 
+  se desarrollaron en ramas independientes (feature branches) a partir de la rama principal (master). 
+  Cada rama fue sometida a un proceso de revisión mediante pull requests, donde se validó la calidad del código, 
+  la coherencia con las especificaciones y el cumplimiento de los criterios de aceptación. Una vez aprobadas, 
+  las ramas se fusionaron (merge) a master, garantizando que la integración de ambos frameworks (Serenity y Karate) 
+  no introdujera conflictos y mantuviera la estabilidad del repositorio. Este flujo de trabajo, alineado con GitFlow, 
+  asegura que el código en master siempre esté en un estado desplegable y que los cambios sean trazables, facilitando 
+  la colaboración entre los miembros del equipo y reduciendo el riesgo de errores en la integración continua.

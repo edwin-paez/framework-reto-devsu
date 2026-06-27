@@ -1,6 +1,6 @@
 package co.devsu.reto.interactions;
 
-import co.devsu.reto.constants.ConstansKeys;
+import co.devsu.reto.constants.ConstantsKeys;
 import co.devsu.reto.models.ProductData;
 import co.devsu.reto.userinterfaces.InventoryPage;
 import java.util.ArrayList;
@@ -28,10 +28,10 @@ public class AddProductToCart implements Interaction {
         double price = Double.parseDouble(priceText.replace("$", "").trim());
         ProductData product = ProductData.builder().name(productName).price(price).build();
 
-        List<ProductData> products = actor.recall(ConstansKeys.PRODUCTS_KEY);
+        List<ProductData> products = actor.recall(ConstantsKeys.PRODUCTS_KEY);
         if (products == null) products = new ArrayList<>();
         products.add(product);
-        actor.remember(ConstansKeys.PRODUCTS_KEY, products);
+        actor.remember(ConstantsKeys.PRODUCTS_KEY, products);
 
         actor.attemptsTo(Click.on(InventoryPage.ADD_TO_CART_SELECTED_PRODUCT.of(productName)));
     }
