@@ -13,14 +13,14 @@ on:
           - all
         default: 'e2e'
       environment:
-        description: 'Ambiente (E2E: default|stg|dev|prod  /  API: qa|staging)'
+        description: 'Ambiente'
         required: true
         type: choice
         options:
           - default
           - stg
-          - dev
-          - prod
+        #  - dev
+        #  - prod
         default: 'default'
       tags:
         description: 'Tags (E2E: @Smoke  /  API: @Smoke|@Regression|@E2E|@Create|@Read|@Update|@Delete)'
