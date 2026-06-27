@@ -4,12 +4,14 @@ function fn() {
 
     var config = {};
 
-    if (env === 'qa') {
+    if (env === 'stg') {
         config.baseUrl = 'https://petstore.swagger.io/v2';
-    } else if (env === 'staging') {
-        config.baseUrl = 'https://petstore.swagger.io/v2'; // mismo host — sustituir por URL real de staging
+    } else if (env === 'dev') {
+        config.baseUrl = 'https://petstore.swagger.io/dev/v2';
+    } else if (env === 'prod') {
+        config.baseUrl = 'https://petstore.swagger.io/prod/v2';
     } else {
-        throw 'Unknown environment: ' + env;
+        config.baseUrl = 'https://petstore.swagger.io/v2';
     }
 
     return config;

@@ -21,8 +21,6 @@ on:
           - stg
           - dev
           - prod
-          - qa
-          - staging
         default: 'default'
       tags:
         description: 'Tags (E2E: @Smoke  /  API: @Smoke|@Regression|@E2E|@Create|@Read|@Update|@Delete)'
