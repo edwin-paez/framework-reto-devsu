@@ -77,6 +77,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/site/serenity
           destination_dir: reports/e2e/${{ github.run_number }}
+          force_orphan: false
+          keep_files: true
 
   # ---------------------------------------------------------------------------
   # JOB 2 — Karate (API)
@@ -159,3 +161,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/karate-reports
           destination_dir: reports/api/${{ github.run_number }}
+          keep_files: true
