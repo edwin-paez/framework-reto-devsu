@@ -180,5 +180,8 @@ CONCLUSIONES GENERALES:
 
 EVIDENCIAS DE EJECUCION:
 
-- Front: https://edwin-paez.github.io/framework-reto-devsu/reports/e2e/8/index.html
-- Back: https://edwin-paez.github.io/framework-reto-devsu/reports/api/10/index.html
+- Front: https://edwin-paez.github.io/framework-reto-devsu/reports/e2e/14/index.html
+- Back: https://edwin-paez.github.io/framework-reto-devsu/reports/api/14/index.html
+
+Nota: El Pipeline puede verse fallido en API debido a que los casos orientados al error estan fallando
+      por los bugs mencionados.

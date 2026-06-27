@@ -1,4 +1,4 @@
-@PurchaseFlow @Smoke
+@PurchaseFlow @Smoke @Regression
 Feature: Flujo de compra exitosa en SauceDemo
 
   @CP-001 @Smoke
