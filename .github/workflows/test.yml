@@ -3,8 +3,17 @@ name: Ejecutar pruebas automatizadas
 on:
   workflow_dispatch:
     inputs:
+      suite:
+        description: 'Suite a ejecutar'
+        required: true
+        type: choice
+        options:
+          - e2e
+          - api
+          - all
+        default: 'e2e'
       environment:
-        description: 'Ambiente'
+        description: 'Ambiente (E2E: default|stg|dev|prod  /  API: qa|staging)'
         required: true
         type: choice
         options:
@@ -12,51 +21,143 @@ on:
           - stg
           - dev
           - prod
+          - qa
+          - staging
         default: 'default'
       tags:
-        description: 'Tags de Cucumber (ej: @Smoke, @Buys)'
+        description: 'Tags (E2E: @Smoke  /  API: @Smoke|@Regression|@E2E|@Create|@Read|@Update|@Delete)'
         required: false
         type: string
         default: '@Smoke'
 
 jobs:
-  test:
+  # ---------------------------------------------------------------------------
+  # JOB 1 — Serenity BDD (E2E)
+  # Corre cuando suite == 'e2e' o suite == 'all'
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: 'E2E — Serenity BDD'
     runs-on: ubuntu-latest
-    
+    if: ${{ github.event.inputs.suite == 'e2e' || github.event.inputs.suite == 'all' }}
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-    
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
-    
-    - name: Run tests
-      run: |
-        echo "Ambiente seleccionado: ${{ github.event.inputs.environment }}"
-        echo "Tags: ${{ github.event.inputs.tags }}"
-        if [ -n "${{ github.event.inputs.tags }}" ]; then
-          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }} -Dcucumber.filter.tags="${{ github.event.inputs.tags }}"
-        else
-          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }}
-        fi
-    
-    - name: Upload Serenity Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: serenity-report-${{ github.event.inputs.environment }}
-        path: target/site/serenity/
-    
-    - name: Deploy to GitHub Pages
-      if: always()
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./target/site/serenity
-        destination_dir: reports/${{ github.run_number }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run E2E tests
+        run: |
+          echo "Suite: E2E | Ambiente: ${{ github.event.inputs.environment }} | Tags: ${{ github.event.inputs.tags }}"
+          if [ -n "${{ github.event.inputs.tags }}" ]; then
+            ./gradlew clean test \
+              -Denvironment=${{ github.event.inputs.environment }} \
+              -Dcucumber.filter.tags="${{ github.event.inputs.tags }}"
+          else
+            ./gradlew clean test \
+              -Denvironment=${{ github.event.inputs.environment }}
+          fi
+
+      - name: Upload Serenity Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serenity-report-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: target/site/serenity/
+
+      - name: Deploy Serenity Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/site/serenity
+          destination_dir: reports/e2e/${{ github.run_number }}
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 — Karate (API)
+  # Corre cuando suite == 'api' o suite == 'all'
+  # ---------------------------------------------------------------------------
+  api:
+    name: 'API — Karate'
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.suite == 'api' || github.event.inputs.suite == 'all' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run API tests
+        run: |
+          echo "Suite: API | Ambiente: ${{ github.event.inputs.environment }} | Tags: ${{ github.event.inputs.tags }}"
+          if [ -n "${{ github.event.inputs.tags }}" ]; then
+            ./gradlew karateTest \
+              -Dkarate.env=${{ github.event.inputs.environment }} \
+              -Dkarate.options="--tags ${{ github.event.inputs.tags }}"
+          else
+            ./gradlew karateTest \
+              -Dkarate.env=${{ github.event.inputs.environment }}
+          fi
+
+      - name: Prepare Karate report index
+        if: always()
+        run: |
+          cat > build/karate-reports/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Karate API Reports</title>
+            <style>
+              body { font-family: Arial; margin: 40px; }
+              ul { list-style: none; padding: 0; }
+              li { margin: 10px 0; }
+              a { color: #0366d6; font-size: 18px; }
+            </style>
+          </head>
+          <body>
+            <h1>Karate API Test Reports</h1>
+            <h2>Ejecucion #${{ github.run_number }} — Ambiente: ${{ github.event.inputs.environment }}</h2>
+            <ul>
+          EOF
+          for file in build/karate-reports/*.html; do
+            filename=$(basename "$file")
+            if [ "$filename" != "index.html" ]; then
+              name="${filename%.html}"
+              echo "<li><a href=\"$filename\">$name</a></li>" >> build/karate-reports/index.html
+            fi
+          done
+          cat >> build/karate-reports/index.html << 'EOF'
+            </ul>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload Karate Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: karate-report-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: build/karate-reports/
+
+      - name: Deploy Karate Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: ./build/karate-reports
+          destination_dir: reports/api/${{ github.run_number }}

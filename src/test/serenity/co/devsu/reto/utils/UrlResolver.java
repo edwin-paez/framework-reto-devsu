@@ -1,6 +1,6 @@
 package co.devsu.reto.utils;
 
-import static co.devsu.reto.constants.ConstansKeys.BASE_URL_KEY;
+import static co.devsu.reto.constants.ConstantsKeys.BASE_URL_KEY;
 
 import net.serenitybdd.model.environment.EnvironmentSpecificConfiguration;
 import net.thucydides.model.util.EnvironmentVariables;

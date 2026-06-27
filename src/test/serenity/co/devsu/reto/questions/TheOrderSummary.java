@@ -1,6 +1,6 @@
 package co.devsu.reto.questions;
 
-import co.devsu.reto.constants.ConstansKeys;
+import co.devsu.reto.constants.ConstantsKeys;
 import co.devsu.reto.models.ProductData;
 import co.devsu.reto.userinterfaces.OrderSummaryPage;
 import co.devsu.reto.utils.Utilities;
@@ -17,7 +17,7 @@ public class TheOrderSummary implements Question<Boolean> {
 
     @Override
     public Boolean answeredBy(Actor actor) {
-        List<ProductData> expected = actor.recall(ConstansKeys.PRODUCTS_KEY);
+        List<ProductData> expected = actor.recall(ConstantsKeys.PRODUCTS_KEY);
         if (!validateProducts(actor, expected)) return false;
         return validateTotals(actor, expected);
     }
