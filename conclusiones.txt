@@ -176,3 +176,9 @@ CONCLUSIONES GENERALES:
   no introdujera conflictos y mantuviera la estabilidad del repositorio. Este flujo de trabajo, alineado con GitFlow, 
   asegura que el código en master siempre esté en un estado desplegable y que los cambios sean trazables, facilitando 
   la colaboración entre los miembros del equipo y reduciendo el riesgo de errores en la integración continua.
+
+
+EVIDENCIAS DE EJECUCION:
+
+- Front: https://edwin-paez.github.io/framework-reto-devsu/reports/e2e/8/index.html
+- Back: 
