@@ -41,9 +41,9 @@ jobs:
         echo "Ambiente seleccionado: ${{ github.event.inputs.environment }}"
         echo "Tags: ${{ github.event.inputs.tags }}"
         if [ -n "${{ github.event.inputs.tags }}" ]; then
-          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }} -Dcucumber.filter.tags="${{ github.event.inputs.tags }}" -Dheadless.mode=true
+          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }} -Dcucumber.filter.tags="${{ github.event.inputs.tags }}"
         else
-          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }} -Dheadless.mode=true
+          ./gradlew clean test -Denvironment=${{ github.event.inputs.environment }}
         fi
     
     - name: Upload Serenity Report
